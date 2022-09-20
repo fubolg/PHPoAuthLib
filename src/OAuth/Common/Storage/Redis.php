@@ -2,12 +2,14 @@
 
 namespace OAuth\Common\Storage;
 
-use OAuth\Common\Storage\Exception\AuthorizationStateNotFoundException;
-use OAuth\Common\Storage\Exception\TokenNotFoundException;
 use OAuth\Common\Token\TokenInterface;
+use OAuth\Common\Storage\Exception\TokenNotFoundException;
+use OAuth\Common\Storage\Exception\AuthorizationStateNotFoundException;
 use Predis\Client as Predis;
 
-// Stores a token in a Redis server. Requires the Predis library available at https://github.com/nrk/predis
+/*
+ * Stores a token in a Redis server. Requires the Predis library available at https://github.com/nrk/predis
+ */
 class Redis implements TokenStorageInterface
 {
     /**
@@ -35,81 +37,81 @@ class Redis implements TokenStorageInterface
     /**
      * @param Predis $redis An instantiated and connected redis client
      * @param string $key The key to store the token under in redis
-     * @param string $stateKey the key to store the state under in redis
+     * @param string $stateKey The key to store the state under in redis.
      */
     public function __construct(Predis $redis, $key, $stateKey)
     {
         $this->redis = $redis;
         $this->key = $key;
         $this->stateKey = $stateKey;
-        $this->cachedTokens = [];
-        $this->cachedStates = [];
+        $this->cachedTokens = array();
+        $this->cachedStates = array();
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function retrieveAccessToken($service)
+    public function retrieveAccessToken($service, $account = null)
     {
-        if (!$this->hasAccessToken($service)) {
+        if (!$this->hasAccessToken($service, $account)) {
             throw new TokenNotFoundException('Token not found in redis');
         }
 
-        if (isset($this->cachedTokens[$service])) {
-            return $this->cachedTokens[$service];
+        if (isset($this->cachedTokens[$service.$account])) {
+            return $this->cachedTokens[$service.$account];
         }
 
-        $val = $this->redis->hget($this->key, $service);
+        $val = $this->redis->hget($this->key, $service.$account);
 
-        return $this->cachedTokens[$service] = unserialize($val);
+        return $this->cachedTokens[$service.$account] = unserialize($val);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function storeAccessToken($service, TokenInterface $token)
+    public function storeAccessToken($service, TokenInterface $token, $account = null)
     {
         // (over)write the token
-        $this->redis->hset($this->key, $service, serialize($token));
-        $this->cachedTokens[$service] = $token;
+        $this->redis->hset($this->key, $service.$account, serialize($token));
+        $this->cachedTokens[$service.$account] = $token;
 
         // allow chaining
         return $this;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function hasAccessToken($service)
+    public function hasAccessToken($service, $account = null)
     {
-        if (isset($this->cachedTokens[$service])
-            && $this->cachedTokens[$service] instanceof TokenInterface
+        if (isset($this->cachedTokens[$service.$account])
+            && $this->cachedTokens[$service.$account] instanceof TokenInterface
         ) {
             return true;
         }
 
-        return $this->redis->hexists($this->key, $service);
+        return $this->redis->hexists($this->key, $service.$account);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function clearToken($service)
+    public function clearToken($service, $account = null)
     {
-        $this->redis->hdel($this->key, $service);
-        unset($this->cachedTokens[$service]);
+        $this->redis->hdel($this->key, $service.$account);
+        unset($this->cachedTokens[$service.$account]);
 
         // allow chaining
         return $this;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function clearAllTokens()
     {
         // memory
-        $this->cachedTokens = [];
+        $this->cachedTokens = array();
 
         // redis
         $keys = $this->redis->hkeys($this->key);
@@ -117,7 +119,7 @@ class Redis implements TokenStorageInterface
 
         // pipeline for performance
         $this->redis->pipeline(
-            function ($pipe) use ($keys, $me): void {
+            function ($pipe) use ($keys, $me) {
                 foreach ($keys as $k) {
                     $pipe->hdel($me->getKey(), $k);
                 }
@@ -129,69 +131,69 @@ class Redis implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function retrieveAuthorizationState($service)
+    public function retrieveAuthorizationState($service, $account = null)
     {
-        if (!$this->hasAuthorizationState($service)) {
+        if (!$this->hasAuthorizationState($service, $account)) {
             throw new AuthorizationStateNotFoundException('State not found in redis');
         }
 
-        if (isset($this->cachedStates[$service])) {
-            return $this->cachedStates[$service];
+        if (isset($this->cachedStates[$service.$account])) {
+            return $this->cachedStates[$service.$account];
         }
 
-        $val = $this->redis->hget($this->stateKey, $service);
+        $val = $this->redis->hget($this->stateKey, $service.$account);
 
-        return $this->cachedStates[$service] = $val;
+        return $this->cachedStates[$service.$account] = $val;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function storeAuthorizationState($service, $state)
+    public function storeAuthorizationState($service, $state, $account = null)
     {
         // (over)write the token
-        $this->redis->hset($this->stateKey, $service, $state);
-        $this->cachedStates[$service] = $state;
+        $this->redis->hset($this->stateKey, $service.$account, $state);
+        $this->cachedStates[$service.$account] = $state;
 
         // allow chaining
         return $this;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function hasAuthorizationState($service)
+    public function hasAuthorizationState($service, $account = null)
     {
-        if (isset($this->cachedStates[$service])
-            && null !== $this->cachedStates[$service]
+        if (isset($this->cachedStates[$service.$account])
+            && null !== $this->cachedStates[$service.$account]
         ) {
             return true;
         }
 
-        return $this->redis->hexists($this->stateKey, $service);
+        return $this->redis->hexists($this->stateKey, $service.$account);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function clearAuthorizationState($service)
+    public function clearAuthorizationState($service, $account = null)
     {
-        $this->redis->hdel($this->stateKey, $service);
-        unset($this->cachedStates[$service]);
+        $this->redis->hdel($this->stateKey, $service.$account);
+        unset($this->cachedStates[$service.$account]);
 
         // allow chaining
         return $this;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function clearAllAuthorizationStates()
     {
         // memory
-        $this->cachedStates = [];
+        $this->cachedStates = array();
 
         // redis
         $keys = $this->redis->hkeys($this->stateKey);
@@ -199,7 +201,7 @@ class Redis implements TokenStorageInterface
 
         // pipeline for performance
         $this->redis->pipeline(
-            function ($pipe) use ($keys, $me): void {
+            function ($pipe) use ($keys, $me) {
                 foreach ($keys as $k) {
                     $pipe->hdel($me->getKey(), $k);
                 }

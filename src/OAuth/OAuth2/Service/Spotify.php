@@ -2,18 +2,14 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 class Spotify extends AbstractService
 {
     /**
-     * Scopes.
+     * Scopes
      *
      * @var string
      */
@@ -29,16 +25,14 @@ class Spotify extends AbstractService
     const SCOPE_USER_READ_BIRTHDAY = 'user-read-birthdate';
     const SCOPE_USER_READ_FOLLOW = 'user-follow-read';
 
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri, true);
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        $this->stateParameterInAuthUrl = true;
 
-        if (null === $baseApiUri) {
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://api.spotify.com/v1/');
         }
     }
@@ -80,6 +74,7 @@ class Spotify extends AbstractService
             throw new TokenResponseException('Error in retrieving token: "' . $data['error'] . '"');
         }
 
+
         $token = new StdOAuth2Token();
         $token->setAccessToken($data['access_token']);
 
@@ -105,7 +100,7 @@ class Spotify extends AbstractService
      */
     protected function getExtraOAuthHeaders()
     {
-        return ['Authorization' => 'Basic ' .
-            base64_encode($this->credentials->getConsumerId() . ':' . $this->credentials->getConsumerSecret()), ];
+        return array('Authorization' => 'Basic ' .
+            base64_encode($this->credentials->getConsumerId() . ':' . $this->credentials->getConsumerSecret()));
     }
 }

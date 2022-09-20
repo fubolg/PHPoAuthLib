@@ -2,13 +2,9 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 class GitHub extends AbstractService
 {
@@ -17,7 +13,7 @@ class GitHub extends AbstractService
      */
 
     /**
-     * Public read-only access (includes public user profile info, public repo info, and gists).
+     * Public read-only access (includes public user profile info, public repo info, and gists)
      */
     const SCOPE_READONLY = '';
 
@@ -123,21 +119,17 @@ class GitHub extends AbstractService
      * Fully manage public keys.
      */
     const SCOPE_PUBLIC_KEY_ADMIN = 'admin:public_key';
-
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri);
-
-        if (null === $baseApiUri) {
+    
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://api.github.com/');
         }
     }
-
+    
     /**
      * {@inheritdoc}
      */
@@ -159,7 +151,7 @@ class GitHub extends AbstractService
      */
     protected function getAuthorizationMethod()
     {
-        return static::AUTHORIZATION_METHOD_HEADER_TOKEN;
+        return static::AUTHORIZATION_METHOD_QUERY_STRING;
     }
 
     /**
@@ -187,13 +179,13 @@ class GitHub extends AbstractService
     }
 
     /**
-     * Used to configure response type -- we want JSON from github, default is query string format.
+     * Used to configure response type -- we want JSON from github, default is query string format
      *
      * @return array
      */
     protected function getExtraOAuthHeaders()
     {
-        return ['Accept' => 'application/json'];
+        return array('Accept' => 'application/json');
     }
 
     /**
@@ -203,7 +195,7 @@ class GitHub extends AbstractService
      */
     protected function getExtraApiHeaders()
     {
-        return ['Accept' => 'application/vnd.github.v3+json'];
+        return array('Accept' => 'application/vnd.github.beta+json');
     }
 
     /**

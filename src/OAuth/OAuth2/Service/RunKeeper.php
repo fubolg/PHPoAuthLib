@@ -2,47 +2,39 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 /**
  * RunKeeper service.
  *
- * @see http://runkeeper.com/developer/healthgraph/registration-authorization
+ * @link http://runkeeper.com/developer/healthgraph/registration-authorization
  */
 class RunKeeper extends AbstractService
 {
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri);
-
-        if (null === $baseApiUri) {
-            $this->baseApiUri = new Uri('https://api.runkeeper.com/');
-        }
-    }
-
     /**
      * {@inheritdoc}
      */
-    public function getAuthorizationUri(array $additionalParameters = [])
+    protected function init()
+    {
+        if( $this->baseApiUri === null ) {
+            $this->baseApiUri = new Uri('https://api.runkeeper.com/');
+        }
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function getAuthorizationUri(array $additionalParameters = array())
     {
         $parameters = array_merge(
             $additionalParameters,
-            [
-                'client_id' => $this->credentials->getConsumerId(),
-                'redirect_uri' => $this->credentials->getCallbackUrl(),
+            array(
+                'client_id'     => $this->credentials->getConsumerId(),
+                'redirect_uri'  => $this->credentials->getCallbackUrl(),
                 'response_type' => 'code',
-            ]
+            )
         );
 
         $parameters['scope'] = implode(' ', $this->scopes);

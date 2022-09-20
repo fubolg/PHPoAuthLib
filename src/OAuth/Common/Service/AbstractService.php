@@ -2,19 +2,20 @@
 
 namespace OAuth\Common\Service;
 
+use OAuth\Common\Consumer\Credentials;
 use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Exception\Exception;
 use OAuth\Common\Http\Client\ClientInterface;
 use OAuth\Common\Http\Uri\Uri;
 use OAuth\Common\Http\Uri\UriInterface;
+use OAuth\Common\Exception\Exception;
 use OAuth\Common\Storage\TokenStorageInterface;
 
 /**
- * Abstract OAuth service, version-agnostic.
+ * Abstract OAuth service, version-agnostic
  */
 abstract class AbstractService implements ServiceInterface
 {
-    /** @var CredentialsInterface */
+    /** @var Credentials */
     protected $credentials;
 
     /** @var ClientInterface */
@@ -23,23 +24,37 @@ abstract class AbstractService implements ServiceInterface
     /** @var TokenStorageInterface */
     protected $storage;
 
+    /** @var null|string */
+    protected $account = null;
+
+    /**
+     * @param CredentialsInterface  $credentials
+     * @param ClientInterface       $httpClient
+     * @param TokenStorageInterface $storage
+     * @param string                $account
+     *
+     */
     public function __construct(
         CredentialsInterface $credentials,
         ClientInterface $httpClient,
-        TokenStorageInterface $storage
+        TokenStorageInterface $storage,
+        $account = null
     ) {
         $this->credentials = $credentials;
         $this->httpClient = $httpClient;
         $this->storage = $storage;
+        $this->account = $account;
     }
 
     /**
-     * @param string|UriInterface $path
+     * @param UriInterface|string $path
      * @param UriInterface        $baseApiUri
      *
      * @return UriInterface
+     *
+     * @throws Exception
      */
-    protected function determineRequestUriFromPath($path, ?UriInterface $baseApiUri = null)
+    protected function determineRequestUriFromPath($path, UriInterface $baseApiUri = null)
     {
         if ($path instanceof UriInterface) {
             $uri = $path;
@@ -71,7 +86,7 @@ abstract class AbstractService implements ServiceInterface
     }
 
     /**
-     * Accessor to the storage adapter to be able to retrieve tokens.
+     * Accessor to the storage adapter to be able to retrieve tokens
      *
      * @return TokenStorageInterface
      */
@@ -89,5 +104,13 @@ abstract class AbstractService implements ServiceInterface
         $classname = get_class($this);
 
         return preg_replace('/^.*\\\\/', '', $classname);
+    }
+
+    /**
+     * @return null|string
+     */
+    public function account()
+    {
+        return $this->account;
     }
 }

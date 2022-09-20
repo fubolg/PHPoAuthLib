@@ -2,28 +2,20 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 class Foursquare extends AbstractService
 {
     private $apiVersionDate = '20130829';
 
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri);
-
-        if (null === $baseApiUri) {
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://api.foursquare.com/v2/');
         }
     }
@@ -71,7 +63,7 @@ class Foursquare extends AbstractService
     /**
      * {@inheritdoc}
      */
-    public function request($path, $method = 'GET', $body = null, array $extraHeaders = [])
+    public function request($path, $method = 'GET', $body = null, array $extraHeaders = array())
     {
         $uri = $this->determineRequestUriFromPath($path, $this->baseApiUri);
         $uri->addToQuery('v', $this->apiVersionDate);

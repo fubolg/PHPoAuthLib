@@ -2,9 +2,9 @@
 
 namespace OAuth\Common\Storage;
 
-use OAuth\Common\Storage\Exception\AuthorizationStateNotFoundException;
-use OAuth\Common\Storage\Exception\TokenNotFoundException;
 use OAuth\Common\Token\TokenInterface;
+use OAuth\Common\Storage\Exception\TokenNotFoundException;
+use OAuth\Common\Storage\Exception\AuthorizationStateNotFoundException;
 
 /**
  * Stores a token in a PHP session.
@@ -27,7 +27,7 @@ class Session implements TokenStorageInterface
     protected $stateVariableName;
 
     /**
-     * @param bool $startSession whether or not to start the session upon construction
+     * @param bool $startSession Whether or not to start the session upon construction.
      * @param string $sessionVariableName the variable name to use within the _SESSION superglobal
      * @param string $stateVariableName
      */
@@ -44,40 +44,40 @@ class Session implements TokenStorageInterface
         $this->sessionVariableName = $sessionVariableName;
         $this->stateVariableName = $stateVariableName;
         if (!isset($_SESSION[$sessionVariableName])) {
-            $_SESSION[$sessionVariableName] = [];
+            $_SESSION[$sessionVariableName] = array();
         }
         if (!isset($_SESSION[$stateVariableName])) {
-            $_SESSION[$stateVariableName] = [];
+            $_SESSION[$stateVariableName] = array();
         }
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function retrieveAccessToken($service)
+    public function retrieveAccessToken($service, $account = null)
     {
-        if ($this->hasAccessToken($service)) {
-            return unserialize($_SESSION[$this->sessionVariableName][$service]);
+        if ($this->hasAccessToken($service, $account)) {
+            return unserialize($_SESSION[$this->sessionVariableName][$service.$account]);
         }
 
         throw new TokenNotFoundException('Token not found in session, are you sure you stored it?');
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function storeAccessToken($service, TokenInterface $token)
+    public function storeAccessToken($service, TokenInterface $token, $account = null)
     {
         $serializedToken = serialize($token);
 
         if (isset($_SESSION[$this->sessionVariableName])
             && is_array($_SESSION[$this->sessionVariableName])
         ) {
-            $_SESSION[$this->sessionVariableName][$service] = $serializedToken;
+            $_SESSION[$this->sessionVariableName][$service.$account] = $serializedToken;
         } else {
-            $_SESSION[$this->sessionVariableName] = [
-                $service => $serializedToken,
-            ];
+            $_SESSION[$this->sessionVariableName] = array(
+                $service.$account => $serializedToken,
+            );
         }
 
         // allow chaining
@@ -85,20 +85,20 @@ class Session implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function hasAccessToken($service)
+    public function hasAccessToken($service, $account = null)
     {
-        return isset($_SESSION[$this->sessionVariableName], $_SESSION[$this->sessionVariableName][$service]);
+        return isset($_SESSION[$this->sessionVariableName], $_SESSION[$this->sessionVariableName][$service.$account]);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function clearToken($service)
+    public function clearToken($service, $account = null)
     {
-        if (array_key_exists($service, $_SESSION[$this->sessionVariableName])) {
-            unset($_SESSION[$this->sessionVariableName][$service]);
+        if (array_key_exists($service.$account, $_SESSION[$this->sessionVariableName])) {
+            unset($_SESSION[$this->sessionVariableName][$service.$account]);
         }
 
         // allow chaining
@@ -106,7 +106,7 @@ class Session implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function clearAllTokens()
     {
@@ -117,18 +117,18 @@ class Session implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function storeAuthorizationState($service, $state)
+    public function storeAuthorizationState($service, $state, $account = null)
     {
         if (isset($_SESSION[$this->stateVariableName])
             && is_array($_SESSION[$this->stateVariableName])
         ) {
-            $_SESSION[$this->stateVariableName][$service] = $state;
+            $_SESSION[$this->stateVariableName][$service.$account] = $state;
         } else {
-            $_SESSION[$this->stateVariableName] = [
-                $service => $state,
-            ];
+            $_SESSION[$this->stateVariableName] = array(
+                $service.$account => $state,
+            );
         }
 
         // allow chaining
@@ -136,32 +136,32 @@ class Session implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function hasAuthorizationState($service)
+    public function hasAuthorizationState($service, $account = null)
     {
-        return isset($_SESSION[$this->stateVariableName], $_SESSION[$this->stateVariableName][$service]);
+        return isset($_SESSION[$this->stateVariableName], $_SESSION[$this->stateVariableName][$service.$account]);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function retrieveAuthorizationState($service)
+    public function retrieveAuthorizationState($service, $account = null)
     {
-        if ($this->hasAuthorizationState($service)) {
-            return $_SESSION[$this->stateVariableName][$service];
+        if ($this->hasAuthorizationState($service, $account)) {
+            return $_SESSION[$this->stateVariableName][$service.$account];
         }
 
         throw new AuthorizationStateNotFoundException('State not found in session, are you sure you stored it?');
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function clearAuthorizationState($service)
+    public function clearAuthorizationState($service, $account = null)
     {
-        if (array_key_exists($service, $_SESSION[$this->stateVariableName])) {
-            unset($_SESSION[$this->stateVariableName][$service]);
+        if (array_key_exists($service.$account, $_SESSION[$this->stateVariableName])) {
+            unset($_SESSION[$this->stateVariableName][$service.$account]);
         }
 
         // allow chaining
@@ -169,7 +169,7 @@ class Session implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function clearAllAuthorizationStates()
     {
@@ -188,9 +188,7 @@ class Session implements TokenStorageInterface
 
     /**
      * Determine if the session has started.
-     *
      * @url http://stackoverflow.com/a/18542272/1470961
-     *
      * @return bool
      */
     protected function sessionHasStarted()

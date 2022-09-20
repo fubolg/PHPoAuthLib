@@ -2,36 +2,18 @@
 
 namespace OAuth\OAuth1\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth1\Token\StdOAuth1Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth1\Signature\SignatureInterface;
-use OAuth\OAuth1\Token\StdOAuth1Token;
 
 class QuickBooks extends AbstractService
 {
     /**
      * {@inheritdoc}
      */
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        SignatureInterface $signature,
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct(
-            $credentials,
-            $httpClient,
-            $storage,
-            $signature,
-            $baseApiUri
-        );
-
-        if (null === $baseApiUri) {
+    public function init()
+    {
+        if (null === $this->baseApiUri) {
             $this->baseApiUri = new Uri('https://quickbooks.api.intuit.com/');
         }
     }
@@ -88,7 +70,6 @@ class QuickBooks extends AbstractService
             throw new TokenResponseException('Unable to parse response.');
         } elseif (isset($data['error'])) {
             $message = 'Error in retrieving token: "' . $data['error'] . '"';
-
             throw new TokenResponseException($message);
         }
 
@@ -107,16 +88,15 @@ class QuickBooks extends AbstractService
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function request(
         $path,
         $method = 'GET',
         $body = null,
-        array $extraHeaders = []
+        array $extraHeaders = array()
     ) {
         $extraHeaders['Accept'] = 'application/json';
-
         return parent::request($path, $method, $body, $extraHeaders);
     }
 }

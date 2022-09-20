@@ -2,34 +2,25 @@
 
 namespace OAuth\OAuth1\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth1\Token\StdOAuth1Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth1\Signature\SignatureInterface;
-use OAuth\OAuth1\Token\StdOAuth1Token;
 use OAuth\OAuth1\Token\TokenInterface;
 
 class Yahoo extends AbstractService
 {
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        SignatureInterface $signature,
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $signature, $baseApiUri);
-
-        if (null === $baseApiUri) {
+    /**
+     * {@inheritdoc}
+     */
+    public function init()
+    {
+        if (null === $this->baseApiUri) {
             $this->baseApiUri = new Uri('https://social.yahooapis.com/v1/');
         }
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function getRequestTokenEndpoint()
     {
@@ -58,23 +49,25 @@ class Yahoo extends AbstractService
     public function refreshAccessToken(TokenInterface $token)
     {
         $extraParams = $token->getExtraParams();
-        $bodyParams = ['oauth_session_handle' => $extraParams['oauth_session_handle']];
+        $bodyParams = array('oauth_session_handle' => $extraParams['oauth_session_handle']);
 
-        $authorizationHeader = [
+        $authorizationHeader = array(
             'Authorization' => $this->buildAuthorizationHeaderForAPIRequest(
                 'POST',
                 $this->getAccessTokenEndpoint(),
-                $this->storage->retrieveAccessToken($this->service()),
+                $this->storage->retrieveAccessToken($this->service(), $this->account()),
                 $bodyParams
-            ),
-        ];
+            )
+        );
 
-        $headers = array_merge($authorizationHeader, $this->getExtraOAuthHeaders(), []);
+
+        
+        $headers = array_merge($authorizationHeader, $this->getExtraOAuthHeaders(), array());
 
         $responseBody = $this->httpClient->retrieveResponse($this->getAccessTokenEndpoint(), $bodyParams, $headers);
 
         $token = $this->parseAccessTokenResponse($responseBody);
-        $this->storage->storeAccessToken($this->service(), $token);
+        $this->storage->storeAccessToken($this->service(), $token, $this->account());
 
         return $token;
     }

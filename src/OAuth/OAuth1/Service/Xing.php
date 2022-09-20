@@ -6,7 +6,7 @@ use OAuth\OAuth1\Token\StdOAuth1Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
 
-class Tumblr extends AbstractService
+class Xing extends AbstractService
 {
     /**
      * {@inheritdoc}
@@ -14,24 +14,16 @@ class Tumblr extends AbstractService
     public function init()
     {
         if (null === $this->baseApiUri) {
-            $this->baseApiUri = new Uri('https://api.tumblr.com/v2/');
+            $this->baseApiUri = new Uri('https://api.xing.com/v1/');
         }
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getRequestTokenEndpoint()
-    {
-        return new Uri('https://www.tumblr.com/oauth/request_token');
-    }
-
+    
     /**
      * {@inheritdoc}
      */
     public function getAuthorizationEndpoint()
     {
-        return new Uri('https://www.tumblr.com/oauth/authorize');
+        return new Uri('https://api.xing.com/v1/authorize');
     }
 
     /**
@@ -39,7 +31,15 @@ class Tumblr extends AbstractService
      */
     public function getAccessTokenEndpoint()
     {
-        return new Uri('https://www.tumblr.com/oauth/access_token');
+        return new Uri('https://api.xing.com/v1/access_token');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRequestTokenEndpoint()
+    {
+        return new Uri('https://api.xing.com/v1/request_token');
     }
 
     /**
@@ -64,11 +64,12 @@ class Tumblr extends AbstractService
     protected function parseAccessTokenResponse($responseBody)
     {
         parse_str($responseBody, $data);
+        $errors = json_decode($responseBody);
 
         if (null === $data || !is_array($data)) {
             throw new TokenResponseException('Unable to parse response.');
-        } elseif (isset($data['error'])) {
-            throw new TokenResponseException('Error in retrieving token: "' . $data['error'] . '"');
+        } elseif ($errors) {
+            throw new TokenResponseException('Error in retrieving token: "' . $errors->error_name . '"');
         }
 
         $token = new StdOAuth1Token();

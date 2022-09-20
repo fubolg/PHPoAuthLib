@@ -2,33 +2,26 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 /**
  * Box service.
  *
  * @author Antoine Corcy <contact@sbin.dk>
- *
- * @see https://developers.box.com/oauth/
+ * @link https://developers.box.com/oauth/
  */
 class Box extends AbstractService
 {
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri, true);
-
-        if (null === $baseApiUri) {
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        $this->stateParameterInAuthUrl = true;
+        
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://api.box.com/2.0/');
         }
     }
@@ -79,7 +72,8 @@ class Box extends AbstractService
             unset($data['refresh_token']);
         }
 
-        unset($data['access_token'], $data['expires_in']);
+        unset($data['access_token']);
+        unset($data['expires_in']);
 
         $token->setExtraParams($data);
 

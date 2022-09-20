@@ -2,32 +2,23 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 /**
  * Buffer API.
- *
  * @author  Sumukh Sridhara <@sumukhsridhara>
- *
- * @see https://bufferapp.com/developers/api
+ * @link https://bufferapp.com/developers/api
  */
 class Buffer extends AbstractService
 {
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri);
-        if ($baseApiUri === null) {
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://api.bufferapp.com/1/');
         }
     }
@@ -59,15 +50,15 @@ class Buffer extends AbstractService
     /**
      * {@inheritdoc}
      */
-    public function getAuthorizationUri(array $additionalParameters = [])
+    public function getAuthorizationUri(array $additionalParameters = array())
     {
         $parameters = array_merge(
             $additionalParameters,
-            [
-                'client_id' => $this->credentials->getConsumerId(),
-                'redirect_uri' => $this->credentials->getCallbackUrl(),
+            array(
+                'client_id'     => $this->credentials->getConsumerId(),
+                'redirect_uri'  => $this->credentials->getCallbackUrl(),
                 'response_type' => 'code',
-            ]
+            )
         );
 
         // Build the url
@@ -86,11 +77,11 @@ class Buffer extends AbstractService
     {
         $responseBody = $this->httpClient->retrieveResponse(
             $this->getRequestTokenEndpoint(),
-            [
+            array(
                 'client_key' => $this->credentials->getConsumerId(),
                 'redirect_uri' => $this->credentials->getCallbackUrl(),
                 'response_type' => 'code',
-            ]
+            )
         );
 
         $code = $this->parseRequestTokenResponse($responseBody);
@@ -107,19 +98,18 @@ class Buffer extends AbstractService
         } elseif (!isset($data['code'])) {
             throw new TokenResponseException('Error in retrieving code.');
         }
-
         return $data['code'];
     }
 
-    public function requestAccessToken($code, $state = null)
+    public function requestAccessToken($code)
     {
-        $bodyParams = [
-            'client_id' => $this->credentials->getConsumerId(),
+        $bodyParams = array(
+            'client_id'     => $this->credentials->getConsumerId(),
             'client_secret' => $this->credentials->getConsumerSecret(),
             'redirect_uri' => $this->credentials->getCallbackUrl(),
-            'code' => $code,
-            'grant_type' => 'authorization_code',
-        ];
+            'code'          => $code,
+            'grant_type'    => 'authorization_code',
+        );
 
         $responseBody = $this->httpClient->retrieveResponse(
             $this->getAccessTokenEndpoint(),
@@ -127,7 +117,7 @@ class Buffer extends AbstractService
             $this->getExtraOAuthHeaders()
         );
         $token = $this->parseAccessTokenResponse($responseBody);
-        $this->storage->storeAccessToken($this->service(), $token);
+        $this->storage->storeAccessToken($this->service(), $token, $this->account());
 
         return $token;
     }

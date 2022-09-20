@@ -2,38 +2,31 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 class Instagram extends AbstractService
 {
     /**
-     * Defined scopes.
-     *
-     * @see http://instagram.com/developer/authentication/#scope
+     * Defined scopes
+     * @link http://instagram.com/developer/authentication/#scope
      */
-    const SCOPE_BASIC = 'basic';
+    const SCOPE_BASIC         = 'basic';
     const SCOPE_PUBLIC_CONTENT = 'public_content';
-    const SCOPE_COMMENTS = 'comments';
+    const SCOPE_COMMENTS      = 'comments';
     const SCOPE_RELATIONSHIPS = 'relationships';
-    const SCOPE_LIKES = 'likes';
+    const SCOPE_LIKES         = 'likes';
     const SCOPE_FOLLOWER_LIST = 'follower_list';
+    
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        $this->stateParameterInAuthUrl = true;
 
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri, true);
-
-        if (null === $baseApiUri) {
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://api.instagram.com/v1/');
         }
     }

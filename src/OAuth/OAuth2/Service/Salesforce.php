@@ -2,19 +2,19 @@
 
 namespace OAuth\OAuth2\Service;
 
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 class Salesforce extends AbstractService
 {
     /**
-     * Scopes.
+     * Scopes
      *
      * @var string
      */
-    const   SCOPE_API = 'api';
-    const   SCOPE_REFRESH_TOKEN = 'refresh_token';
+    const   SCOPE_API           =   'api',
+            SCOPE_REFRESH_TOKEN =   'refresh_token';
 
     /**
      * {@inheritdoc}
@@ -63,7 +63,8 @@ class Salesforce extends AbstractService
 
         $token = new StdOAuth2Token();
         $token->setAccessToken($data['access_token']);
-        $token->setEndOfLife(StdOAuth2Token::EOL_UNKNOWN);
+        // Salesforce tokens evidently never expire...
+        $token->setEndOfLife(StdOAuth2Token::EOL_NEVER_EXPIRES);
         unset($data['access_token']);
 
         if (isset($data['refresh_token'])) {
@@ -81,6 +82,6 @@ class Salesforce extends AbstractService
      */
     protected function getExtraOAuthHeaders()
     {
-        return ['Accept' => 'application/json'];
+        return array('Accept' => 'application/json');
     }
 }

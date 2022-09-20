@@ -2,27 +2,19 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
 use OAuth\Common\Token\TokenInterface;
 use OAuth\OAuth2\Token\StdOAuth2Token;
 
 class Harvest extends AbstractService
 {
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri);
-
-        if (null === $baseApiUri) {
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://api.harvestapp.com/');
         }
     }
@@ -30,16 +22,16 @@ class Harvest extends AbstractService
     /**
      * {@inheritdoc}
      */
-    public function getAuthorizationUri(array $additionalParameters = [])
+    public function getAuthorizationUri(array $additionalParameters = array())
     {
         $parameters = array_merge(
             $additionalParameters,
-            [
-                'client_id' => $this->credentials->getConsumerId(),
-                'redirect_uri' => $this->credentials->getCallbackUrl(),
+            array(
+                'client_id'     => $this->credentials->getConsumerId(),
+                'redirect_uri'  => $this->credentials->getCallbackUrl(),
                 'state' => 'optional-csrf-token',
                 'response_type' => 'code',
-            ]
+            )
         );
 
         // Build the url
@@ -82,7 +74,7 @@ class Harvest extends AbstractService
     {
         $data = json_decode($responseBody, true);
 
-        if (null === $data || !is_array($data)) {
+        if (null === $data || ! is_array($data)) {
             throw new TokenResponseException('Unable to parse response.');
         } elseif (isset($data['error'])) {
             throw new TokenResponseException('Error in retrieving token: "' . $data['error'] . '"');
@@ -103,7 +95,11 @@ class Harvest extends AbstractService
     /**
      * Refreshes an OAuth2 access token.
      *
+     * @param TokenInterface $token
+     *
      * @return TokenInterface $token
+     *
+     * @throws MissingRefreshTokenException
      */
     public function refreshAccessToken(TokenInterface $token)
     {
@@ -113,13 +109,13 @@ class Harvest extends AbstractService
             throw new MissingRefreshTokenException();
         }
 
-        $parameters = [
-            'grant_type' => 'refresh_token',
-            'type' => 'web_server',
-            'client_id' => $this->credentials->getConsumerId(),
+        $parameters = array(
+            'grant_type'    => 'refresh_token',
+            'type'          => 'web_server',
+            'client_id'     => $this->credentials->getConsumerId(),
             'client_secret' => $this->credentials->getConsumerSecret(),
             'refresh_token' => $refreshToken,
-        ];
+        );
 
         $responseBody = $this->httpClient->retrieveResponse(
             $this->getAccessTokenEndpoint(),
@@ -127,7 +123,7 @@ class Harvest extends AbstractService
             $this->getExtraOAuthHeaders()
         );
         $token = $this->parseAccessTokenResponse($responseBody);
-        $this->storage->storeAccessToken($this->service(), $token);
+        $this->storage->storeAccessToken($this->service(), $token, $this->account());
 
         return $token;
     }
@@ -137,7 +133,7 @@ class Harvest extends AbstractService
      */
     protected function getExtraOAuthHeaders()
     {
-        return ['Accept' => 'application/json'];
+        return array('Accept' => 'application/json');
     }
 
     /**
@@ -147,6 +143,6 @@ class Harvest extends AbstractService
      */
     protected function getExtraApiHeaders()
     {
-        return ['Accept' => 'application/json'];
+        return array('Accept' => 'application/json');
     }
 }

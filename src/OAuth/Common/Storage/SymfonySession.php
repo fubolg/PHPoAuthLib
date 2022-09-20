@@ -2,20 +2,19 @@
 
 namespace OAuth\Common\Storage;
 
-use OAuth\Common\Storage\Exception\AuthorizationStateNotFoundException;
-use OAuth\Common\Storage\Exception\TokenNotFoundException;
 use OAuth\Common\Token\TokenInterface;
+use OAuth\Common\Storage\Exception\TokenNotFoundException;
+use OAuth\Common\Storage\Exception\AuthorizationStateNotFoundException;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class SymfonySession implements TokenStorageInterface
 {
     private $session;
-
     private $sessionVariableName;
-
     private $stateVariableName;
 
     /**
+     * @param SessionInterface $session
      * @param bool $startSession
      * @param string $sessionVariableName
      * @param string $stateVariableName
@@ -32,34 +31,34 @@ class SymfonySession implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function retrieveAccessToken($service)
+    public function retrieveAccessToken($service, $account = null)
     {
-        if ($this->hasAccessToken($service)) {
+        if ($this->hasAccessToken($service, $account)) {
             // get from session
             $tokens = $this->session->get($this->sessionVariableName);
 
             // one item
-            return $tokens[$service];
+            return $tokens[$service.$account];
         }
 
         throw new TokenNotFoundException('Token not found in session, are you sure you stored it?');
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function storeAccessToken($service, TokenInterface $token)
+    public function storeAccessToken($service, TokenInterface $token, $account = null)
     {
         // get previously saved tokens
         $tokens = $this->session->get($this->sessionVariableName);
 
         if (!is_array($tokens)) {
-            $tokens = [];
+            $tokens = array();
         }
 
-        $tokens[$service] = $token;
+        $tokens[$service.$account] = $token;
 
         // save
         $this->session->set($this->sessionVariableName, $tokens);
@@ -69,28 +68,28 @@ class SymfonySession implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function hasAccessToken($service)
+    public function hasAccessToken($service, $account = null)
     {
         // get from session
         $tokens = $this->session->get($this->sessionVariableName);
 
         return is_array($tokens)
-            && isset($tokens[$service])
-            && $tokens[$service] instanceof TokenInterface;
+            && isset($tokens[$service.$account])
+            && $tokens[$service.$account] instanceof TokenInterface;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function clearToken($service)
+    public function clearToken($service, $account = null)
     {
         // get previously saved tokens
         $tokens = $this->session->get($this->sessionVariableName);
 
-        if (is_array($tokens) && array_key_exists($service, $tokens)) {
-            unset($tokens[$service]);
+        if (is_array($tokens) && array_key_exists($service.$account, $tokens)) {
+            unset($tokens[$service.$account]);
 
             // Replace the stored tokens array
             $this->session->set($this->sessionVariableName, $tokens);
@@ -101,7 +100,7 @@ class SymfonySession implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function clearAllTokens()
     {
@@ -112,34 +111,34 @@ class SymfonySession implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function retrieveAuthorizationState($service)
+    public function retrieveAuthorizationState($service, $account = null)
     {
-        if ($this->hasAuthorizationState($service)) {
+        if ($this->hasAuthorizationState($service, $account)) {
             // get from session
             $states = $this->session->get($this->stateVariableName);
 
             // one item
-            return $states[$service];
+            return $states[$service.$account];
         }
 
         throw new AuthorizationStateNotFoundException('State not found in session, are you sure you stored it?');
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function storeAuthorizationState($service, $state)
+    public function storeAuthorizationState($service, $state, $account = null)
     {
         // get previously saved tokens
         $states = $this->session->get($this->stateVariableName);
 
         if (!is_array($states)) {
-            $states = [];
+            $states = array();
         }
 
-        $states[$service] = $state;
+        $states[$service.$account] = $state;
 
         // save
         $this->session->set($this->stateVariableName, $states);
@@ -149,28 +148,28 @@ class SymfonySession implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function hasAuthorizationState($service)
+    public function hasAuthorizationState($service, $account = null)
     {
         // get from session
         $states = $this->session->get($this->stateVariableName);
 
         return is_array($states)
-        && isset($states[$service])
-        && null !== $states[$service];
+        && isset($states[$service.$account])
+        && null !== $states[$service.$account];
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function clearAuthorizationState($service)
+    public function clearAuthorizationState($service, $account = null)
     {
         // get previously saved tokens
         $states = $this->session->get($this->stateVariableName);
 
-        if (is_array($states) && array_key_exists($service, $states)) {
-            unset($states[$service]);
+        if (is_array($states) && array_key_exists($service.$account, $states)) {
+            unset($states[$service.$account]);
 
             // Replace the stored tokens array
             $this->session->set($this->stateVariableName, $states);
@@ -181,7 +180,7 @@ class SymfonySession implements TokenStorageInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function clearAllAuthorizationStates()
     {

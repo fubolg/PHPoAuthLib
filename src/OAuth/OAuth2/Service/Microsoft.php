@@ -2,13 +2,9 @@
 
 namespace OAuth\OAuth2\Service;
 
-use OAuth\Common\Consumer\CredentialsInterface;
-use OAuth\Common\Http\Client\ClientInterface;
+use OAuth\OAuth2\Token\StdOAuth2Token;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
-use OAuth\Common\Storage\TokenStorageInterface;
-use OAuth\OAuth2\Token\StdOAuth2Token;
 
 class Microsoft extends AbstractService
 {
@@ -50,16 +46,12 @@ class Microsoft extends AbstractService
      */
     const SCOPE_CONTACTS_EMAILS = 'wl.contacts_emails';
 
-    public function __construct(
-        CredentialsInterface $credentials,
-        ClientInterface $httpClient,
-        TokenStorageInterface $storage,
-        $scopes = [],
-        ?UriInterface $baseApiUri = null
-    ) {
-        parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri);
-
-        if (null === $baseApiUri) {
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
+    {
+        if( $this->baseApiUri === null ) {
             $this->baseApiUri = new Uri('https://apis.live.net/v5.0/');
         }
     }
@@ -110,7 +102,8 @@ class Microsoft extends AbstractService
             unset($data['refresh_token']);
         }
 
-        unset($data['access_token'], $data['expires_in']);
+        unset($data['access_token']);
+        unset($data['expires_in']);
 
         $token->setExtraParams($data);
 
