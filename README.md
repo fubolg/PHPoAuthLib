@@ -22,11 +22,11 @@ The recommended way to install this is through [composer](http://getcomposer.org
 
 Features
 --------
-- PSR-4 
+- PSR-4
 - Fully extensible in every facet.
     - You can implement any service with any custom requirements by extending the protocol version's `AbstractService` implementation.
     - You can use any HTTP client you desire, just create a class utilizing it which implements `OAuth\Common\Http\ClientInterface` (two implementations are included)
-    - You can use any storage mechanism for tokens. By default, session, in-memory and Redis.io (requires PHPRedis) storage mechanisms are included. Implement additional mechanisms by implementing `OAuth\Common\Token\TokenStorageInterface`.
+    - You can use any storage mechanism for tokens. In-memory, PHP session, Symfony session, and Redis (through Predis) implementations are included. Implement additional mechanisms by implementing `OAuth\Common\Storage\TokenStorageInterface`.
 
 Service support
 ---------------
@@ -41,6 +41,7 @@ Included service implementations
     - FitBit
     - Flickr
     - QuickBooks
+    - Redmine
     - Scoop.it!
     - Tumblr
     - Twitter
@@ -89,6 +90,7 @@ Included service implementations
     - Xing
     - Yahoo
     - Yammer
+    - Yandex
 - more to come!
 
 Examples
@@ -104,7 +106,16 @@ Then point your browser to:
 
 Usage
 ------
-For usage with complete auth flow, please see the examples. More in-depth documentation will come with release 1.0.
+For usage with a complete authorization flow, see the examples.
+
+Maintainer documentation
+------------------------
+- [Architecture and component boundaries](docs/architecture.md)
+- [Development workflow](docs/development.md)
+- [Testing and validation](docs/testing.md)
+- [Implemented service class inventory](docs/services.md)
+- [Helix integration boundary](docs/helix-integration.md)
+- [Specification workflow](specs/README.md)
 
 Framework Integration
 ---------------------

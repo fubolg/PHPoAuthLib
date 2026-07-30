@@ -6,3 +6,15 @@ atlassian-ide-plugin.xml
 nbproject/
 .phpunit.result.cache
 .com
+/AGENTS.override.md
+
+# Helix AI infrastructure generated projections and local agent state
+/.agents/
+/.codex/
+/.claude/
+/.github/skills/
+/.helix-ai/
+/.specify/*
+!/.specify/memory/
+/.specify/memory/*
+!/.specify/memory/constitution.md
