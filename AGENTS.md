@@ -2,110 +2,75 @@
 
 ## Scope and ownership
 
-- This repository provides the `lusitanian/oauth` PHP library under the
-  `OAuth\` namespace. It contains protocol-independent credentials, URI, HTTP
-  client, token, and storage contracts; OAuth 1 signing and service behavior;
-  OAuth 2 authorization, token, refresh, and request behavior; and concrete
-  provider service classes.
-- `src/OAuth/ServiceFactory.php` owns generic service discovery, custom service
-  registration, scope resolution, default HTTP-client selection, and OAuth 1
-  versus OAuth 2 construction.
-- `src/OAuth/Common` owns shared credentials, HTTP, URI, service, storage, and
-  token abstractions and their bundled implementations.
-- `src/OAuth/OAuth1` owns OAuth 1 service flow, HMAC-SHA1 signing, OAuth 1
-  tokens, and OAuth 1 provider classes.
-- `src/OAuth/OAuth2` owns OAuth 2 service flow, authorization state, token
-  refresh, token placement, OAuth 2 tokens, and OAuth 2 provider classes.
-- `../helix` selects this repository as the VCS source for the
-  `lusitanian/oauth` Composer package. Helix-specific factories, token
-  persistence, transport adapters, and provider subclasses remain in Helix.
-- Change generic OAuth behavior and public library contracts here. Change
-  tenant-aware storage, channel settings, application orchestration, and
-  Helix-only provider behavior in `../helix`.
-- See `docs/architecture.md` for verified component boundaries and
-  `docs/helix-integration.md` for the consumer boundary.
+- This repository owns reusable OAuth protocol, credential, URI, HTTP, token,
+  storage, signature, service-factory, and provider behavior under `src/OAuth/`.
+- Generic protocol and provider fixes belong here. Helix owns tenant/channel
+  settings, application factories, persistence and transport adapters, and
+  Helix-only provider subclasses; do not create a workaround in either
+  repository for behavior owned by the other.
+- Preserve the package identity, namespace, public interfaces, constructors,
+  token representations, storage contracts, service discovery, and exception
+  behavior unless an explicit compatibility plan changes them.
+
+## Sources of truth and command discovery
+
+- Inspect `composer.json`, its lock file, PHPUnit and formatter configuration,
+  CI, source, focused tests, and code-coupled documentation before making
+  runtime, dependency, provider, compatibility, or validation assumptions.
+- Dependency manifests define supported constraints; the lock file defines the
+  resolved graph; CI and tool configuration define executable validation.
+  Report disagreement with documentation, installed dependencies, or running
+  services as drift.
+- Use Composer scripts to discover current broad checks. The tracked commands
+  include `composer validate --strict`, `composer tests`, and `composer
+  check`; `composer fix` writes files and is not a validation command.
+- Run a focused PHPUnit filter first for a behavioral change, then the relevant
+  protocol/provider suite and broader configured checks proportional to risk.
+
+## Protocol, provider, and security rules
+
+- Treat authorization state, callback URIs, OAuth signatures, nonce/timestamp
+  behavior, token serialization, expiry, refresh, placement, storage, and HTTP
+  authorization as security-sensitive compatibility contracts.
+- Provider endpoints, parameters, scopes, token parsing, and authorization
+  methods MUST be based on current repository evidence or an authoritative
+  provider source. A provider class or old test alone does not prove live
+  compatibility.
+- Behavioral fixes MUST include focused deterministic regression tests for
+  relevant accepted and rejected input, signature, state, token lifecycle,
+  provider payload, storage, and failure paths. Test-first sequencing applies
+  only when the approved plan requires it.
+- Validate affected Helix consumers when public behavior they use changes. Do
+  not make live provider requests or access external OAuth accounts without
+  separate explicit authorization.
+- Never expose real consumer secrets, tokens, authorization codes, callback
+  state, private keys, authorization headers, complete environment files, or
+  sensitive provider payloads. Tests must use clearly synthetic values.
 
 ## Shared AI and SDD infrastructure
 
-- `../helix-ai-infrastructure` owns shared policy and generated Spec Kit assets.
-- This repository owns this guide, `.specify/memory/constitution.md`, local
-  feature artifacts under `specs/`, and code-coupled documentation.
-- `.helix-ai.yml` pins the reviewed distribution. Do not hand-edit generated
-  `.agents/` or managed `.specify/` files; change shared sources centrally.
-
-## Runtime and compatibility
-
-- `composer.json` declares PHP `^7.2 || 8.*`.
-- Production autoloading maps `OAuth\` to `src/OAuth`.
-- Development dependencies declare PHPUnit `^8.5` and PHP CS Fixer `^3.0`.
-- Development dependency installation requires the DOM, cURL, and JSON
-  extensions according to `composer.json`.
-- The Symfony session and Redis storage implementations depend on the optional
-  Symfony HttpFoundation and Predis packages declared in `require-dev` and
-  `suggest`.
-- The historical Travis configuration lists PHP 7.2, 7.3, 7.4, and 8.0. Do
-  not represent that file as evidence of validation on newer PHP versions.
+- `../helix-ai-infrastructure` owns shared SDD policy, templates, workflows,
+  generated agent integrations, bootstrap tooling, and distribution metadata.
+- This repository owns this guide, `.specify/memory/constitution.md`, feature
+  artifacts under `specs/`, and code-coupled documentation.
+- `.helix-ai.yml` pins the reviewed distribution. Do not hand-edit
+  `.agents/**` or managed `.specify/**`; preview and apply only a validated
+  central distribution.
 
 ## Working agreement
 
-- Inspect `git status` before editing and preserve unrelated user changes.
-- Search the current implementation and focused unit tests before adding an
-  abstraction or changing a public method.
-- Preserve the `OAuth\` namespace, Composer package identity, public
-  interfaces, constructor contracts, token serialization behavior, and service
-  factory behavior unless the requested change explicitly alters them.
-- Make the smallest change that addresses the verified requirement.
-- Treat OAuth provider endpoint, parameter, scope, token parsing, and
-  authorization-method changes as provider-contract changes. Add or update
-  focused tests and document the evidence for the new contract.
-- Do not infer that a provider is currently compatible merely because a
-  provider class or unit test exists. No live-provider validation workflow is
-  configured in this repository.
-- Validate affected consumers in `../helix` after changing public behavior used
-  by Helix.
-- Do not commit, push, publish, access external OAuth accounts, or make live
-  provider requests unless the user explicitly requests that action.
-- Never print or store real consumer secrets, access tokens, refresh tokens,
-  authorization codes, callback state, or complete environment files.
-- After editing, review the complete diff, run the narrowest relevant
-  validation, report checks that passed, failed, or could not run, and provide
-  a suggested commit message.
-
-## Canonical validation
-
-- `composer validate --strict`
-- `composer tests`
-- `composer check`
-- `./vendor/bin/phpunit --filter <TestName>`
-
-`composer tests` runs the PHPUnit suite. `composer check` runs PHP CS Fixer in
-dry-run mode and then PHPUnit. `composer fix` modifies files and is not a
-validation command.
-
-The Redis unit test connects to `127.0.0.1:6379` by default and marks itself
-skipped when Redis is unavailable. Do not start Redis implicitly for an
-unrelated task. If `vendor/` is missing, dependency installation requires a
-separate Composer install step and may require network access.
-
-## Security-sensitive changes
-
-- Treat credential handling, callback URIs, authorization state, token
-  serialization, token expiry, refresh tokens, OAuth 1 signature construction,
-  and HTTP authorization headers as security-sensitive contracts.
-- Preserve authorization-state validation unless a verified provider contract
-  requires a scoped change.
-- Keep secrets out of fixtures and examples; use obvious non-secret values in
-  tests.
-- Review storage changes for cross-service token collisions, unsafe
-  serialization behavior, unintended clear-all operations, and state/token
-  namespace changes.
-- Review HTTP client changes for credential leakage through query strings,
-  headers, redirects, logs, and exception messages.
-
-## Code reviews
-
-- Prioritize authentication correctness, secret or token exposure, signature
-  construction, state validation, backward compatibility, provider regressions,
-  and missing tests.
-- Report actionable findings ordered by severity with file and line references.
-- Avoid a change summary unless the user asks for one.
+- Inspect Git status before editing and preserve unrelated work.
+- Search implementations, extensions, tests, docs, and known consumers before
+  adding an abstraction or changing a public contract.
+- Make the smallest compatible owning-repository change. Define consumer
+  compatibility, migration, release order, verification, recovery, rollback,
+  and removal conditions for contract changes.
+- Do not silently install, upgrade, or rewrite dependencies. Do not start Redis
+  for an unrelated task; report an environment-dependent skipped check.
+- Review for state-validation bypass, signature errors, token leakage, unsafe
+  serialization or clear-all behavior, provider drift, compatibility breaks,
+  and missing regression evidence.
+- Commit, push, publish, release, production access, external writes, destructive
+  actions, and live-provider interaction require separate explicit authorization.
+- Report each relevant command as passed, failed, or not run, identify residual
+  security/compatibility risk, and provide a suggested commit message.
